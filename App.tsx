@@ -9,35 +9,62 @@ RESOURCES:
 - React Context API: https://react.dev/learn/passing-data-deeply-with-context
 */
 
-import React, { useState, createContext } from 'react';
-import { StyleSheet, Text, SafeAreaView } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useState, createContext, useContext, useCallback } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { NavigationContainer, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 const StatisticsContext = createContext<any>(null);
 
 const StatisticsProvider = ({ children }: { children: React.ReactNode }) => {
-  const [stats] = useState(Array(9).fill(0));
-  
+  const [stats, setStats] = useState(Array(9).fill(0));
+  const updateStats = (num: number) => {
+    const newStats = [...stats];
+    newStats[num - 1] += 1;
+    setStats(newStats);
+  };
+  const clearStats = () => setStats(Array(9).fill(0));
+
   return (
-    <StatisticsContext.Provider value={{ stats }}>
+    <StatisticsContext.Provider value={{ stats, updateStats, clearStats }}>
       {children}
     </StatisticsContext.Provider>
   );
 };
 
-function HomeScreen() {
+function HomeScreen({ navigation }: any) {
+  const [currentNumber, setCurrentNumber] = useState('...');
+  const { updateStats } = useContext(StatisticsContext);
+
+  useFocusEffect(useCallback(() => { return () => setCurrentNumber('...'); }, []));
+
+  const generateRandomNumber = () => {
+    const randomNum = Math.floor(Math.random() * 9) + 1;
+    setCurrentNumber(randomNum.toString());
+    updateStats(randomNum);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.placeholderText}>Home Screen Logic Coming Soon...</Text>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.header}><Text style={styles.headerTitle}>Number Generator</Text></View>
+      <View style={styles.content}>
+        <View style={styles.numberCircle}><Text style={styles.displayNumber}>{currentNumber}</Text></View>
+      </View>
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.button} onPress={generateRandomNumber}><Text style={styles.buttonText}>GENERATE</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Statistics')}><Text style={styles.buttonText}>VIEW STATS</Text></TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
-function StatisticsScreen() {
+function StatisticsScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.placeholderText}>Stats Screen Logic Coming Soon...</Text>
+      <View style={styles.header}><Text style={styles.headerTitle}>Statistics</Text></View>
+      <View style={styles.content}><Text style={{color: '#fff'}}>List implementation coming in next update...</Text></View>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}><Text style={styles.buttonText}>BACK</Text></TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -58,15 +85,13 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#b08968', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  placeholderText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600'
-  }
+  container: { flex: 1, backgroundColor: '#b08968' },
+  header: { height: 60, backgroundColor: '#7f5539', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  numberCircle: { width: 120, height: 120, justifyContent: 'center', alignItems: 'center' },
+  displayNumber: { fontSize: 80, fontWeight: 'bold', color: '#fff' },
+  footer: { padding: 20, gap: 15 },
+  button: { backgroundColor: '#7f5539', padding: 15, borderRadius: 5, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
 });
